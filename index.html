@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>算数5年生</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#FFF8E8;font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif}
+#root{min-height:100vh}
+button{-webkit-tap-highlight-color:transparent;font-family:inherit}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#f0f0f0}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes popIn{0%{transform:scale(0.4) rotate(-10deg);opacity:0}60%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes wiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes slideUp{0%{transform:translateY(30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes starSpin{0%{transform:rotate(0deg) scale(0)}50%{transform:rotate(180deg) scale(1.3)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes floatUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-60px);opacity:0}}
+@keyframes rainbowBorder{0%{border-color:#FF6B9D}25%{border-color:#FFB347}50%{border-color:#47D3FF}75%{border-color:#B388FF}100%{border-color:#FF6B9D}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+// ====== カラーパレット ======
+const COLORS = {
+  primary: "#7C3AED",
+  primaryLight: "#A78BFA",
+  primaryBg: "#F5F0FF",
+  pink: "#EC4899",
+  pinkBg: "#FDF2F8",
+  orange: "#F97316",
+  orangeBg: "#FFF7ED",
+  teal: "#0D9488",
+  tealBg: "#F0FDFA",
+  blue: "#2563EB",
+  blueBg: "#EFF6FF",
+  yellow: "#EAB308",
+  yellowBg: "#FEFCE8",
+  red: "#DC2626",
+  redBg: "#FEF2F2",
+};
+
+// ====== 問題データ（東京書籍5年生算数 準拠） ======
+const UNITS = [
+  {
+    id:1, title:"整数と小数", emoji:"🔢", color:"#7C3AED", bg:"#F5F0FF",
+    mascot:"🦄",
+    topics:["整数・小数のしくみ","10倍・100倍・1/10","数の大小比較"],
+    sets:[
+      {setLabel:"第1セット：整数・小数のしくみ", quizzes:[
+        {id:"1-01",emoji:"🔢",q:"3.456 の「4」は、どの位の数ですか？",choices:["一の位","十分の一の位（小数第1位）","百分の一の位（小数第2位）","千分の一の位（小数第3位）"],answer:1,hint:"小数点の右が小数第1位（0.1の位）、その右が小数第2位（0.01の位）だよ。3.456 は 3＋0.4＋0.05＋0.006 だね。"},
+        {id:"1-02",emoji:"✖️",q:"2.73 を 10倍すると、いくつになりますか？",choices:["0.273","27.3","273","2730"],answer:1,hint:"10倍すると小数点が右に1つずれるよ。2.73 → 27.3 だね。"},
+        {id:"1-03",emoji:"➗",q:"46.5 を 100で割ると、いくつになりますか？",choices:["4650","4.65","0.465","0.0465"],answer:2,hint:"100で割ると小数点が左に2つずれるよ。46.5 → 0.465 だね。"},
+        {id:"1-04",emoji:"🔢",q:"0.001 を 1000個あつめると、いくつになりますか？",choices:["0.1","1","10","100"],answer:1,hint:"0.001×1000＝1 だよ。0.001 は 1/1000 だから、1000個で ちょうど 1 になるね。"},
+        {id:"1-05",emoji:"📏",q:"次のうち、いちばん大きい数はどれですか？",choices:["3.099","3.10","3.100","3.09"],answer:1,hint:"3.10 は 3.100 と同じ。3.10 = 3.099...より大きい。小数点以下の位をそろえて比べよう！"},
+        {id:"1-06",emoji:"✖️",q:"0.34 × 100 はいくつですか？",choices:["3.4","340","34","0.034"],answer:2,hint:"100倍すると小数点が右に2つずれるよ。0.34 → 34 だね。"},
+        {id:"1-07",emoji:"🔢",q:"5.06 で、「0」は何を表していますか？",choices:["一の位の0","小数第1位の0（0.1が0個）","小数第2位の0（0.01が0個）","意味のない0"],answer:1,hint:"5.06 ＝ 5 + 0.0 + 0.06。小数第1位は 0.1 の位だから「0.1 が 0個」を表しているよ。"},
+        {id:"1-08",emoji:"📊",q:"次の中で、3.040 と同じ大きさの数はどれですか？",choices:["3.04","3.400","30.40","0.304"],answer:0,hint:"3.040 = 3.04 だよ。一番右の0は消しても値は変わらないよ。"},
+        {id:"1-09",emoji:"✖️",q:"小数点を右に3つずらすと、何倍になりますか？",choices:["10倍","100倍","1000倍","10000倍"],answer:2,hint:"小数点を右に1つ→10倍、右に2つ→100倍、右に3つ→1000倍 だよ！"},
+        {id:"1-10",emoji:"🔢",q:"「3と7/100」を小数で表すと？",choices:["3.7","37","3.07","0.37"],answer:2,hint:"7/100 = 0.07 だよ。3 + 0.07 = 3.07 だね。"},
+      ]},
+      {setLabel:"第2セット：小数のたし算・ひき算", quizzes:[
+        {id:"1-11",emoji:"➕",q:"3.85 + 2.67 はいくつですか？",choices:["6.42","6.52","5.42","6.02"],answer:1,hint:"小数点をそろえて計算しよう。0.85+0.67=1.52、3+2+1=6 で 6.52 だよ。"},
+        {id:"1-12",emoji:"➖",q:"7.3 − 4.86 はいくつですか？",choices:["2.44","2.54","3.44","2.34"],answer:0,hint:"7.30 − 4.86 と考えよう。0.30−0.86 は借りて計算。7.30−4.86 = 2.44 だよ。"},
+        {id:"1-13",emoji:"➕",q:"0.6 + 0.8 はいくつですか？",choices:["0.14","1.4","14","0.014"],answer:1,hint:"0.6 + 0.8 = 1.4 だよ。0.1が6個と8個で14個、つまり1.4だね。"},
+        {id:"1-14",emoji:"➖",q:"5 − 2.37 はいくつですか？",choices:["2.63","2.73","3.63","2.53"],answer:0,hint:"5.00 − 2.37 と考えよう。5.00−2.37 = 2.63 だよ。"},
+        {id:"1-15",emoji:"➕",q:"1.25 + 0.9 はいくつですか？",choices:["2.15","1.34","1.115","2.025"],answer:0,hint:"1.25 + 0.90 = 2.15 だよ。小数点をそろえて計算しよう！"},
+        {id:"1-16",emoji:"➖",q:"4.2 − 1.85 はいくつですか？",choices:["2.35","3.45","2.45","2.65"],answer:0,hint:"4.20 − 1.85 = 2.35 だよ。"},
+        {id:"1-17",emoji:"➕",q:"3.07 + 2.9 はいくつですか？",choices:["5.97","5.07","32.9","5.077"],answer:0,hint:"3.07 + 2.90 = 5.97 だよ。位をそろえて足そう！"},
+        {id:"1-18",emoji:"➖",q:"10 − 6.48 はいくつですか？",choices:["3.52","4.52","3.42","4.62"],answer:0,hint:"10.00 − 6.48 = 3.52 だよ。くり下がりに注意しよう。"},
+        {id:"1-19",emoji:"➕",q:"0.125 + 0.875 はいくつですか？",choices:["0.9","1","0.1","10"],answer:1,hint:"0.125 + 0.875 = 1.000 = 1 だよ！合わせて1になるきれいな組み合わせだね。"},
+        {id:"1-20",emoji:"🔢",q:"3.6 + □ = 5 の □ にあてはまる数は？",choices:["1.4","2.4","1.6","8.6"],answer:0,hint:"□ = 5 − 3.6 = 1.4 だよ。ひき算で逆算しよう！"},
+      ]},
+      {setLabel:"第3セット：小数のかけ算・わり算", quizzes:[
+        {id:"1-21",emoji:"✖️",q:"2.4 × 3 はいくつですか？",choices:["6.2","7.2","0.72","72"],answer:1,hint:"2.4×3 ＝ 0.1が24個×3 ＝ 0.1が72個 ＝ 7.2 だよ。"},
+        {id:"1-22",emoji:"➗",q:"6.3 ÷ 7 はいくつですか？",choices:["9","0.09","0.9","90"],answer:2,hint:"6.3 ÷ 7 ＝ 0.1が63個÷7 ＝ 0.1が9個 ＝ 0.9 だよ。"},
+        {id:"1-23",emoji:"✖️",q:"3.5 × 4 はいくつですか？",choices:["12","14","1.4","140"],answer:1,hint:"3.5×4 ＝ 14 だよ。35×4＝140、小数点1つで 14.0 だね。"},
+        {id:"1-24",emoji:"➗",q:"8.4 ÷ 4 はいくつですか？",choices:["21","0.21","2.1","210"],answer:2,hint:"84÷4＝21、小数点1つ戻して 2.1 だよ。"},
+        {id:"1-25",emoji:"✖️",q:"1.2 × 5 はいくつですか？",choices:["5","6","0.6","60"],answer:1,hint:"12×5＝60、小数点1つ戻して 6.0 → 6 だよ。"},
+        {id:"1-26",emoji:"➗",q:"4.5 ÷ 9 はいくつですか？",choices:["0.5","5","50","0.05"],answer:0,hint:"45÷9＝5、小数点1つ戻して 0.5 だよ。"},
+        {id:"1-27",emoji:"✖️",q:"0.7 × 8 はいくつですか？",choices:["5.6","0.56","56","560"],answer:0,hint:"7×8＝56、小数点1つ戻して 5.6 だよ。"},
+        {id:"1-28",emoji:"➗",q:"9.6 ÷ 8 はいくつですか？",choices:["1.2","12","0.12","120"],answer:0,hint:"96÷8＝12、小数点1つ戻して 1.2 だよ。"},
+        {id:"1-29",emoji:"✖️",q:"2.5 × 6 はいくつですか？",choices:["12","15","1.5","150"],answer:1,hint:"25×6＝150、小数点1つ戻して 15.0 → 15 だよ。"},
+        {id:"1-30",emoji:"➗",q:"7.2 ÷ 6 はいくつですか？",choices:["1.2","12","0.12","120"],answer:0,hint:"72÷6＝12、小数点1つ戻して 1.2 だよ。"},
+      ]},
+    ]
+  },
+  {
+    id:2, title:"体積", emoji:"📦", color:"#0D9488", bg:"#F0FDFA",
+    mascot:"🐢",
+    topics:["直方体・立方体の体積","体積の単位","複雑な形の体積"],
+    sets:[
+      {setLabel:"第1セット：体積の公式", quizzes:[
+        {id:"2-01",emoji:"📦",q:"直方体の体積の公式はどれですか？",choices:["たて＋よこ＋高さ","たて×よこ×高さ","たて×よこ","（たて＋よこ）×2"],answer:1,hint:"体積＝たて×よこ×高さ だよ。3つの辺をかけ算しよう！"},
+        {id:"2-02",emoji:"🎲",q:"一辺が4cmの立方体の体積は何cm³ですか？",choices:["16cm³","12cm³","64cm³","48cm³"],answer:2,hint:"立方体の体積＝辺×辺×辺＝4×4×4＝64cm³ だよ。"},
+        {id:"2-03",emoji:"📦",q:"たて3cm、よこ5cm、高さ4cmの直方体の体積は？",choices:["60cm³","24cm³","15cm³","47cm³"],answer:0,hint:"3×5×4＝60cm³ だよ。"},
+        {id:"2-04",emoji:"🎲",q:"一辺が1cmの立方体の体積は何cm³ですか？",choices:["3cm³","6cm³","1cm³","0.1cm³"],answer:2,hint:"1×1×1＝1cm³ だよ。これが体積の基本の単位だね！"},
+        {id:"2-05",emoji:"📦",q:"たて2cm、よこ6cm、高さ5cmの直方体の体積は？",choices:["60cm³","13cm³","30cm³","120cm³"],answer:0,hint:"2×6×5＝60cm³ だよ。"},
+        {id:"2-06",emoji:"🎲",q:"一辺が5cmの立方体の体積は何cm³ですか？",choices:["15cm³","25cm³","75cm³","125cm³"],answer:3,hint:"5×5×5＝125cm³ だよ。"},
+        {id:"2-07",emoji:"📦",q:"たて4cm、よこ4cm、高さ4cmの直方体の体積は？",choices:["48cm³","16cm³","64cm³","32cm³"],answer:2,hint:"4×4×4＝64cm³ だよ。これは一辺4cmの立方体と同じだね！"},
+        {id:"2-08",emoji:"📦",q:"体積が60cm³の直方体で、たて3cm、よこ4cmの場合、高さは何cmですか？",choices:["5cm","7cm","4cm","8cm"],answer:0,hint:"高さ＝体積÷（たて×よこ）＝60÷（3×4）＝60÷12＝5cm だよ。"},
+        {id:"2-09",emoji:"📦",q:"たて10cm、よこ10cm、高さ10cmの直方体の体積は？",choices:["30cm³","100cm³","300cm³","1000cm³"],answer:3,hint:"10×10×10＝1000cm³ だよ。これは1Lと同じ！"},
+        {id:"2-10",emoji:"📦",q:"体積が24cm³で、たて2cm、高さ4cmの直方体。よこは何cmですか？",choices:["3cm","6cm","12cm","18cm"],answer:0,hint:"よこ＝24÷（2×4）＝24÷8＝3cm だよ。"},
+      ]},
+      {setLabel:"第2セット：体積の単位", quizzes:[
+        {id:"2-11",emoji:"🪣",q:"1L（リットル）は何cm³ですか？",choices:["10cm³","100cm³","1000cm³","10000cm³"],answer:2,hint:"1L＝1000cm³ だよ。10cm×10cm×10cmの箱の体積が1Lだね。"},
+        {id:"2-12",emoji:"🏠",q:"1m³は何cm³ですか？",choices:["100cm³","10000cm³","100万cm³","1億cm³"],answer:2,hint:"1m＝100cmなので、1m³＝100×100×100＝1,000,000cm³（100万cm³）だよ。"},
+        {id:"2-13",emoji:"🪣",q:"2000cm³は何Lですか？",choices:["0.2L","2L","20L","200L"],answer:1,hint:"1000cm³＝1Lだから、2000cm³＝2L だよ。"},
+        {id:"2-14",emoji:"🏠",q:"3m³は何cm³ですか？",choices:["300cm³","3000cm³","30万cm³","300万cm³"],answer:3,hint:"1m³＝100万cm³だから、3m³＝300万cm³だよ。"},
+        {id:"2-15",emoji:"🪣",q:"1dL（デシリットル）は何cm³ですか？",choices:["1cm³","10cm³","100cm³","1000cm³"],answer:2,hint:"1L＝1000cm³、1dL＝1/10L＝100cm³ だよ。"},
+        {id:"2-16",emoji:"📏",q:"1m³は何L（リットル）ですか？",choices:["10L","100L","1000L","10000L"],answer:2,hint:"1m³＝1000000cm³＝1000L だよ。大きい！"},
+        {id:"2-17",emoji:"🪣",q:"0.5Lは何cm³ですか？",choices:["5cm³","50cm³","500cm³","5000cm³"],answer:2,hint:"1L＝1000cm³だから、0.5L＝500cm³ だよ。"},
+        {id:"2-18",emoji:"🏠",q:"たて50cm、よこ40cm、高さ30cmの箱の体積は何Lですか？",choices:["6L","60L","600L","6000L"],answer:1,hint:"50×40×30＝60000cm³＝60L だよ。"},
+        {id:"2-19",emoji:"🪣",q:"1mL（ミリリットル）は何cm³ですか？",choices:["0.001cm³","0.01cm³","0.1cm³","1cm³"],answer:3,hint:"1mL＝1cm³ だよ。これは覚えておくと便利！"},
+        {id:"2-20",emoji:"📏",q:"たて2m、よこ3m、高さ4mの部屋の体積は何m³ですか？",choices:["9m³","18m³","24m³","36m³"],answer:2,hint:"2×3×4＝24m³ だよ。"},
+      ]},
+      {setLabel:"第3セット：複雑な形の体積", quizzes:[
+        {id:"2-21",emoji:"🏗️",q:"L字型の立体の体積を求めるとき、どのような方法が使えますか？",choices:["公式が存在しないので計算できない","大きい直方体の体積から小さい直方体の体積を引く","すべての辺を足す","全部の面積を求める"],answer:1,hint:"「大きい直方体－小さい直方体」または「2つの直方体に分けて足す」という方法が使えるよ！"},
+        {id:"2-22",emoji:"📦",q:"右のL字型：大きい直方体（10×8×5）から小さい直方体（4×3×5）を取り除いた形の体積は？",choices:["340cm³","400cm³","60cm³","260cm³"],answer:0,hint:"10×8×5＝400、4×3×5＝60、400−60＝340cm³ だよ。"},
+        {id:"2-23",emoji:"🏗️",q:"階段型の立体（2段）を2つの直方体に分けて体積を求める方法はどれですか？",choices:["2つの直方体の体積をたす","2つの直方体の体積をひく","2つの直方体の体積をかける","2つの直方体の体積をわる"],answer:0,hint:"でこぼこした形は、直方体に分けてから体積をたすと求められるよ！"},
+        {id:"2-24",emoji:"📦",q:"底面が階段型（6×4＋3×4）で高さ2cmの立体の体積は？",choices:["72cm³","60cm³","48cm³","84cm³"],answer:0,hint:"底面積＝6×4＋3×4＝24＋12＝36、体積＝36×2＝72cm³ だよ。"},
+        {id:"2-25",emoji:"🏗️",q:"直方体Aが5×5×10、そこから直方体B（3×3×10）をくりぬいた形の体積は？",choices:["160cm³","250cm³","90cm³","340cm³"],answer:0,hint:"250－90＝160cm³ だよ。くりぬく問題は引き算で解こう！"},
+        {id:"2-26",emoji:"📦",q:"たて5cm、よこ4cm、高さ3cmの直方体2つをくっつけた立体の体積は？",choices:["60cm³","120cm³","240cm³","30cm³"],answer:1,hint:"5×4×3＝60を2つ分で 60×2＝120cm³ だよ。"},
+        {id:"2-27",emoji:"🏗️",q:"でこぼこした形の体積を正確に求めるために必要なことは何ですか？",choices:["目分量で計算する","いくつかの直方体・立方体に分けてから計算する","面積だけ求める","外側の辺だけ測る"],answer:1,hint:"複雑な形は「直方体に分割」か「大きい直方体から引く」のどちらかで解けるよ！"},
+        {id:"2-28",emoji:"📦",q:"底面が8cm×6cmで、高さが5cmの直方体の体積は何cm³？",choices:["240cm³","48cm³","190cm³","300cm³"],answer:0,hint:"8×6×5＝240cm³ だよ。"},
+        {id:"2-29",emoji:"🏗️",q:"水槽（たて20cm×よこ30cm）に水が深さ15cmまで入っている。水の体積は何cm³？",choices:["9000cm³","900cm³","4500cm³","6000cm³"],answer:0,hint:"20×30×15＝9000cm³ だよ。体積の公式は水にも使えるね！"},
+        {id:"2-30",emoji:"📦",q:"一辺3cmの立方体8つを積み重ねた立体の体積は？",choices:["24cm³","72cm³","216cm³","648cm³"],answer:2,hint:"一辺3cmの立方体1つの体積＝27cm³、8つで 27×8＝216cm³。または2×2×2個の立方体＝一辺6cmの立方体＝6×6×6＝216cm³ だね！"},
+      ]},
+    ]
+  },
+  {
+    id:3, title:"倍数と公倍数・約数と公約数", emoji:"🔄", color:"#EC4899", bg:"#FDF2F8",
+    mascot:"🌸",
+    topics:["倍数・公倍数・最小公倍数","約数・公約数・最大公約数","整数のたし算・ひき算（応用）"],
+    sets:[
+      {setLabel:"第1セット：倍数・公倍数", quizzes:[
+        {id:"3-01",emoji:"🔢",q:"3の倍数をすべて選んでください。（4つの選択肢から1つを選ぶ問題）",choices:["7","11","15","22"],answer:2,hint:"3の倍数は3、6、9、12、15、18、21… だよ。15＝3×5 だからOK！"},
+        {id:"3-02",emoji:"🔄",q:"4と6の最小公倍数はいくつですか？",choices:["2","12","24","48"],answer:1,hint:"4の倍数：4,8,12,16… 6の倍数：6,12,18… 共通する最小の数は12だよ。"},
+        {id:"3-03",emoji:"🔢",q:"5の倍数ではないものはどれですか？",choices:["25","35","45","52"],answer:3,hint:"5の倍数は1の位が0か5の数だよ。52は1の位が2だから5の倍数じゃないね。"},
+        {id:"3-04",emoji:"🔄",q:"3と5の最小公倍数はいくつですか？",choices:["8","15","30","45"],answer:1,hint:"3と5は公約数が1だけ（互いに素）なので、最小公倍数＝3×5＝15 だよ。"},
+        {id:"3-05",emoji:"🔢",q:"2と3と4の最小公倍数はいくつですか？",choices:["24","12","6","48"],answer:1,hint:"2の倍数かつ3の倍数かつ4の倍数：12,24,36…。最小は12だよ。"},
+        {id:"3-06",emoji:"🔄",q:"6と9の最小公倍数はいくつですか？",choices:["3","18","54","72"],answer:1,hint:"6の倍数：6,12,18,24… 9の倍数：9,18,27… 共通する最小は18 だよ。"},
+        {id:"3-07",emoji:"🔢",q:"最小公倍数はどのような数のことですか？",choices:["2つの数を足した数","2つの数の共通する倍数のうち最も小さい数","2つの数を引いた数","2つの数の積"],answer:1,hint:"公倍数（共通する倍数）の中でいちばん小さいものが最小公倍数だよ！"},
+        {id:"3-08",emoji:"🔄",q:"8と12の最小公倍数はいくつですか？",choices:["96","4","24","48"],answer:2,hint:"8の倍数：8,16,24,32… 12の倍数：12,24,36… 最小公倍数は24 だよ。"},
+        {id:"3-09",emoji:"🔢",q:"電車Aは6分ごと、電車Bは10分ごとに来る。次に同時に来るのは何分後？",choices:["16分後","30分後","60分後","120分後"],answer:1,hint:"6と10の最小公倍数を求めよう。6の倍数：6,12,18,24,30… 10の倍数：10,20,30… 最小公倍数は30だよ！"},
+        {id:"3-10",emoji:"🔄",q:"4と6と8の最小公倍数はいくつですか？",choices:["48","24","12","96"],answer:1,hint:"4,6,8の最小公倍数：まず6と8の最小公倍数は24、24は4の倍数なので24 だよ。"},
+      ]},
+      {setLabel:"第2セット：約数・公約数", quizzes:[
+        {id:"3-11",emoji:"🔢",q:"12の約数をすべて含む選択肢はどれですか？",choices:["1,2,3,4,6,12","1,2,4,8,12","1,3,6,12","2,4,6,12"],answer:0,hint:"12の約数：12÷1=12、12÷2=6、12÷3=4、12÷4=3、12÷6=2、12÷12=1 だよ。"},
+        {id:"3-12",emoji:"🔄",q:"12と18の最大公約数はいくつですか？",choices:["2","3","6","9"],answer:2,hint:"12の約数：1,2,3,4,6,12  18の約数：1,2,3,6,9,18  公約数は1,2,3,6。最大は6 だよ。"},
+        {id:"3-13",emoji:"🔢",q:"24の約数の個数はいくつですか？",choices:["4個","6個","8個","10個"],answer:2,hint:"24の約数：1,2,3,4,6,8,12,24  8個だよ。"},
+        {id:"3-14",emoji:"🔄",q:"8と12の最大公約数はいくつですか？",choices:["2","4","6","8"],answer:1,hint:"8の約数：1,2,4,8  12の約数：1,2,3,4,6,12  公約数は1,2,4。最大は4 だよ。"},
+        {id:"3-15",emoji:"🔢",q:"最大公約数は何に使えますか？",choices:["2つの数の倍数を求める","分数を約分するとき","面積を求めるとき","体積を求めるとき"],answer:1,hint:"最大公約数は分数の約分（ぶんぼとぶんしを同じ数で割る）に使うよ！"},
+        {id:"3-16",emoji:"🔄",q:"15と25の最大公約数はいくつですか？",choices:["3","5","15","25"],answer:1,hint:"15の約数：1,3,5,15  25の約数：1,5,25  公約数は1,5。最大は5 だよ。"},
+        {id:"3-17",emoji:"🔢",q:"24cm×18cmの長方形を、同じ大きさの正方形のタイルで、あまりなく並べるとき、最大の正方形の一辺は何cmですか？",choices:["3cm","6cm","9cm","12cm"],answer:1,hint:"24と18の最大公約数＝6 cm だよ！"},
+        {id:"3-18",emoji:"🔄",q:"36と48の最大公約数はいくつですか？",choices:["6","9","12","18"],answer:2,hint:"36の約数：1,2,3,4,6,9,12,18,36  48の約数：1,2,3,4,6,8,12,16,24,48  最大公約数は12 だよ。"},
+        {id:"3-19",emoji:"🔢",q:"互いに素とはどういう意味ですか？",choices:["2つの数が等しいこと","2つの数の最大公約数が1であること","2つの数の最小公倍数が1であること","2つの数が素数であること"],answer:1,hint:"最大公約数が1（つまり公約数が1だけ）の2つの数を「互いに素」というよ。"},
+        {id:"3-20",emoji:"🔄",q:"30と42の最大公約数はいくつですか？",choices:["3","6","7","14"],answer:1,hint:"30の約数：1,2,3,5,6,10,15,30  42の約数：1,2,3,6,7,14,21,42  公約数：1,2,3,6。最大は6 だよ。"},
+      ]},
+      {setLabel:"第3セット：倍数・約数の応用", quizzes:[
+        {id:"3-21",emoji:"🍎",q:"りんご18個とみかん24個を同じ数ずつ袋に分けるとき、最大で何袋に分けられますか？",choices:["3袋","4袋","6袋","9袋"],answer:2,hint:"18と24の最大公約数＝6  6袋に分けられるよ。"},
+        {id:"3-22",emoji:"🔄",q:"2と3と5の最小公倍数はいくつですか？",choices:["10","15","30","60"],answer:2,hint:"2×3×5＝30。互いに素な3つの数の最小公倍数は積だよ！"},
+        {id:"3-23",emoji:"🔢",q:"素数とはどのような数ですか？",choices:["2以上で、1とその数だけで割り切れる数","偶数のこと","3の倍数","10より小さい数"],answer:0,hint:"素数は 2,3,5,7,11,13,17,19,23… 1とその数自身でしか割れない数だよ。ちなみに1は素数ではないよ！"},
+        {id:"3-24",emoji:"🔄",q:"花A（3日ごと開花）と花B（5日ごと開花）が今日同時に咲いた。次に同時に咲くのは何日後？",choices:["8日後","15日後","30日後","45日後"],answer:1,hint:"3と5の最小公倍数＝15  15日後だよ！"},
+        {id:"3-25",emoji:"🔢",q:"20以下の素数はいくつありますか？",choices:["6個","7個","8個","9個"],answer:2,hint:"2,3,5,7,11,13,17,19 の8個だよ。偶数は2だけが素数だよ。"},
+        {id:"3-26",emoji:"🔄",q:"分数6/8を約分すると？",choices:["3/4","6/8","2/3","1/2"],answer:0,hint:"6と8の最大公約数は2。6÷2=3、8÷2=4 で 3/4 だよ！"},
+        {id:"3-27",emoji:"🔢",q:"「15の倍数は5の倍数でもある」この文は正しいですか？",choices:["正しい","正しくない","場合による","わからない"],answer:0,hint:"15の倍数：15,30,45,60… これらはすべて5でも割り切れるね。15は5×3だから正しい！"},
+        {id:"3-28",emoji:"🔄",q:"3と7の公倍数のうち、最も小さいものはどれですか？",choices:["10","21","42","63"],answer:1,hint:"3と7は互いに素なので最小公倍数＝3×7＝21 だよ。"},
+        {id:"3-29",emoji:"🔢",q:"48の約数の個数は？",choices:["8個","10個","12個","6個"],answer:1,hint:"48＝2⁴×3  約数の個数＝(4+1)×(1+1)＝10個。1,2,3,4,6,8,12,16,24,48 だよ。"},
+        {id:"3-30",emoji:"🔄",q:"2つの数の最大公約数が6、最小公倍数が36のとき、2つの数の組み合わせとして正しいものは？",choices:["6と36","12と18","6と18","9と12"],answer:1,hint:"最大公約数×最小公倍数＝2数の積。6×36＝216。12×18＝216 だよ！"},
+      ]},
+    ]
+  },
+  {
+    id:4, title:"分数", emoji:"🍕", color:"#F97316", bg:"#FFF7ED",
+    mascot:"🦊",
+    topics:["分数の種類と大小","通分・約分","分数のたし算・ひき算"],
+    sets:[
+      {setLabel:"第1セット：分数の種類・大小", quizzes:[
+        {id:"4-01",emoji:"🍕",q:"仮分数を帯分数に直すと？　7/3 は？",choices:["1と1/3","2と1/3","1と2/3","3と1/7"],answer:1,hint:"7÷3＝2あまり1  2と1/3 だよ。"},
+        {id:"4-02",emoji:"🍕",q:"帯分数を仮分数に直すと？　2と3/4 は？",choices:["5/4","9/4","11/4","7/4"],answer:2,hint:"2と3/4＝(2×4+3)/4＝11/4 だよ。"},
+        {id:"4-03",emoji:"🍕",q:"次の中でいちばん大きい分数はどれですか？",choices:["3/4","5/8","2/3","7/12"],answer:0,hint:"通分して比べよう。3/4＝9/12、5/8＝7.5/12（≒）、2/3＝8/12、7/12。3/4がいちばん大きいよ。"},
+        {id:"4-04",emoji:"🍕",q:"1/2 と 1/3 ではどちらが大きいですか？",choices:["1/2","1/3","同じ","わからない"],answer:0,hint:"分母が大きいほど小さい。1/2＝3/6、1/3＝2/6  1/2の方が大きいよ。"},
+        {id:"4-05",emoji:"🍕",q:"約分して最も簡単にすると？　6/9 は？",choices:["3/4","2/3","1/3","4/6"],answer:1,hint:"6と9の最大公約数＝3  6÷3=2、9÷3=3  2/3 だよ。"},
+        {id:"4-06",emoji:"🍕",q:"3/5 = □/20  □に入る数は？",choices:["9","12","15","6"],answer:1,hint:"5×4＝20 だから、3×4＝12  3/5＝12/20 だよ。"},
+        {id:"4-07",emoji:"🍕",q:"3/4 と 5/6 を通分すると？",choices:["9/12 と 10/12","6/8 と 10/12","9/12 と 5/12","3/12 と 5/12"],answer:0,hint:"4と6の最小公倍数＝12  3/4＝9/12、5/6＝10/12 だよ。"},
+        {id:"4-08",emoji:"🍕",q:"5/6 > □/4 となる□に当てはまる最大の整数は？",choices:["2","3","4","5"],answer:1,hint:"5/6＝10/12、□/4＝3□/12。3/4＝9/12＜10/12 なので□＝3 だよ。"},
+        {id:"4-09",emoji:"🍕",q:"分母が同じ分数を比べるとき、どちらが大きいですか？",choices:["分子が大きい方","分子が小さい方","両方同じ","分母に関係する"],answer:0,hint:"分母が同じなら、分子が大きい方が大きい分数だよ。2/7＜5/7 だね。"},
+        {id:"4-10",emoji:"🍕",q:"次の中で真分数はどれですか？",choices:["7/4","4/4","3/4","14/4"],answer:2,hint:"真分数は「分子＜分母」の分数。3/4 は分子3＜分母4なので真分数だよ。"},
+      ]},
+      {setLabel:"第2セット：分数のたし算・ひき算", quizzes:[
+        {id:"4-11",emoji:"➕",q:"1/3 + 1/4 はいくつですか？",choices:["2/7","7/12","5/12","1/12"],answer:1,hint:"通分：1/3＝4/12、1/4＝3/12  4/12＋3/12＝7/12 だよ。"},
+        {id:"4-12",emoji:"➖",q:"3/4 − 1/3 はいくつですか？",choices:["2/1","5/12","1/6","1/4"],answer:1,hint:"通分：3/4＝9/12、1/3＝4/12  9/12−4/12＝5/12 だよ。"},
+        {id:"4-13",emoji:"➕",q:"1/2 + 1/3 + 1/6 はいくつですか？",choices:["1","3/11","2/3","5/6"],answer:0,hint:"通分（分母6）：3/6＋2/6＋1/6＝6/6＝1 だよ！"},
+        {id:"4-14",emoji:"➖",q:"1 − 3/8 はいくつですか？",choices:["5/8","3/8","7/8","1/8"],answer:0,hint:"1＝8/8  8/8−3/8＝5/8 だよ。"},
+        {id:"4-15",emoji:"➕",q:"2/5 + 3/10 はいくつですか？",choices:["5/15","1/2","7/10","3/5"],answer:2,hint:"通分：2/5＝4/10  4/10＋3/10＝7/10 だよ。"},
+        {id:"4-16",emoji:"➖",q:"5/6 − 1/4 はいくつですか？",choices:["4/2","7/12","1/2","11/12"],answer:1,hint:"通分（分母12）：10/12−3/12＝7/12 だよ。"},
+        {id:"4-17",emoji:"➕",q:"帯分数どうしの計算：1と1/2 + 2と1/3 はいくつですか？",choices:["3と5/6","3と2/5","4と1/6","3と1/6"],answer:0,hint:"整数どうし：1+2=3、分数どうし：1/2+1/3=3/6+2/6=5/6  3と5/6 だよ。"},
+        {id:"4-18",emoji:"➖",q:"2 − 1と3/4 はいくつですか？",choices:["1と3/4","1/4","3/4","1と1/4"],answer:1,hint:"2＝1と4/4  (1と4/4)−(1と3/4)＝4/4−3/4＝1/4 だよ。"},
+        {id:"4-19",emoji:"➕",q:"3/8 + 5/12 はいくつですか？",choices:["8/20","17/24","19/24","1/2"],answer:2,hint:"通分（分母24）：9/24＋10/24＝19/24 だよ。"},
+        {id:"4-20",emoji:"➖",q:"3と1/3 − 1と3/4 はいくつですか？",choices:["2と7/12","1と7/12","1と5/12","2と1/12"],answer:1,hint:"通分（分母12）：3と4/12 − 1と9/12  くり下げて：2と16/12−1と9/12＝1と7/12 だよ。"},
+      ]},
+      {setLabel:"第3セット：分数の応用", quizzes:[
+        {id:"4-21",emoji:"🍕",q:"ピザ全体の 2/5 を食べた後、さらに 1/4 を食べた。全体のどれだけ食べましたか？",choices:["3/9","13/20","3/20","1/2"],answer:1,hint:"2/5＋1/4＝8/20＋5/20＝13/20 だよ。"},
+        {id:"4-22",emoji:"🍕",q:"リボンが 3/4 m ある。そこから 1/6 m 使った。残りは何mですか？",choices:["7/12m","1/2m","2/3m","11/12m"],answer:0,hint:"3/4−1/6＝9/12−2/12＝7/12 m だよ。"},
+        {id:"4-23",emoji:"🍕",q:"3/5 L のジュースに 1/4 L 足した。全部で何L？",choices:["17/20L","4/9L","1/2L","7/20L"],answer:0,hint:"3/5＋1/4＝12/20＋5/20＝17/20 L だよ。"},
+        {id:"4-24",emoji:"🍕",q:"1/2 + 1/4 + 1/8 + 1/8 はいくつですか？",choices:["1","3/4","4/14","1/2"],answer:0,hint:"通分（分母8）：4/8＋2/8＋1/8＋1/8＝8/8＝1 だよ！"},
+        {id:"4-25",emoji:"🍕",q:"道のりが 5/6 km で、そのうち 2/3 km 歩いた。残りは何km？",choices:["1/6km","3/6km","1/3km","2/6km"],answer:0,hint:"5/6−2/3＝5/6−4/6＝1/6 km だよ。"},
+        {id:"4-26",emoji:"🍕",q:"分母と分子に同じ数をたすと分数の大きさは？",choices:["変わらない","必ず大きくなる","必ず小さくなる","わからない"],answer:1,hint:"例：1/2、(1+1)/(2+1)＝2/3＞1/2。分母<分子のとき大きく、分母>分子のとき1に近づくよ。真分数では必ず大きくなるよ。"},
+        {id:"4-27",emoji:"🍕",q:"1/3 m のテープが 6 本。全部で何m？",choices:["2m","1/18m","6/3m","9m"],answer:0,hint:"1/3×6＝6/3＝2 m だよ。"},
+        {id:"4-28",emoji:"🍕",q:"2/3 と 3/4 と 5/6 の和はいくつですか？",choices:["2と1/4","10/13","7/4","2と1/6"],answer:0,hint:"通分（分母12）：8/12＋9/12＋10/12＝27/12＝2と3/12＝2と1/4 だよ。"},
+        {id:"4-29",emoji:"🍕",q:"「2/3 m は 1 m の何倍か」を分数で表すと？",choices:["3/2倍","2/3倍","1/3倍","3倍"],answer:1,hint:"2/3÷1＝2/3。2/3 m は 1 m の 2/3倍 だよ。"},
+        {id:"4-30",emoji:"🍕",q:"帯分数 2と5/6 を仮分数に直すと？",choices:["7/6","11/6","17/6","12/6"],answer:2,hint:"2と5/6＝(2×6+5)/6＝17/6 だよ。"},
+      ]},
+    ]
+  },
+  {
+    id:5, title:"面積（三角形・四角形）", emoji:"📐", color:"#2563EB", bg:"#EFF6FF",
+    mascot:"🐬",
+    topics:["三角形の面積","平行四辺形・ひし形の面積","様々な図形の面積"],
+    sets:[
+      {setLabel:"第1セット：平行四辺形・三角形の面積", quizzes:[
+        {id:"5-01",emoji:"📐",q:"平行四辺形の面積の公式はどれですか？",choices:["底辺×高さ÷2","底辺×高さ","（底辺+高さ）×2","底辺²"],answer:1,hint:"平行四辺形の面積＝底辺×高さ だよ。長方形と同じだね！"},
+        {id:"5-02",emoji:"📐",q:"三角形の面積の公式はどれですか？",choices:["底辺×高さ","底辺×高さ÷2","（底辺×高さ）²","底辺÷高さ"],answer:1,hint:"三角形の面積＝底辺×高さ÷2 だよ。平行四辺形の半分だよ。"},
+        {id:"5-03",emoji:"📐",q:"底辺8cm、高さ5cmの三角形の面積は？",choices:["40cm²","13cm²","20cm²","80cm²"],answer:2,hint:"8×5÷2＝20 cm² だよ。"},
+        {id:"5-04",emoji:"📐",q:"底辺6cm、高さ4cmの平行四辺形の面積は？",choices:["24cm²","12cm²","48cm²","10cm²"],answer:0,hint:"6×4＝24 cm² だよ。"},
+        {id:"5-05",emoji:"📐",q:"底辺10cm、高さ7cmの三角形の面積は？",choices:["70cm²","17cm²","35cm²","140cm²"],answer:2,hint:"10×7÷2＝35 cm² だよ。"},
+        {id:"5-06",emoji:"📐",q:"三角形の「高さ」とはどれですか？",choices:["底辺の長さ","底辺に垂直な線の長さ（斜めではない）","斜辺の長さ","三角形の外側の高さ"],answer:1,hint:"高さは底辺に垂直（直角）に下ろした線の長さだよ。斜めの辺の長さじゃないよ！"},
+        {id:"5-07",emoji:"📐",q:"底辺が12cm、面積が30cm²の三角形の高さは何cmですか？",choices:["2.5cm","5cm","6cm","15cm"],answer:1,hint:"高さ＝面積×2÷底辺＝30×2÷12＝5 cm だよ。"},
+        {id:"5-08",emoji:"📐",q:"底辺9cm、高さ6cmの平行四辺形の面積は？",choices:["27cm²","54cm²","30cm²","45cm²"],answer:1,hint:"9×6＝54 cm² だよ。"},
+        {id:"5-09",emoji:"📐",q:"底辺5cm、高さ8cmの三角形の面積は？",choices:["40cm²","13cm²","20cm²","16cm²"],answer:2,hint:"5×8÷2＝20 cm² だよ。"},
+        {id:"5-10",emoji:"📐",q:"同じ底辺・高さの三角形と平行四辺形の面積の関係は？",choices:["三角形＝平行四辺形","三角形＝平行四辺形の2倍","三角形＝平行四辺形の1/2","同じにならない"],answer:2,hint:"三角形＝底辺×高さ÷2  平行四辺形＝底辺×高さ  三角形は平行四辺形の1/2だよ！"},
+      ]},
+      {setLabel:"第2セット：ひし形・台形の面積", quizzes:[
+        {id:"5-11",emoji:"💎",q:"ひし形の面積の公式はどれですか？",choices:["対角線×対角線","対角線×対角線÷2","辺×辺","（対角線1＋対角線2）×2"],answer:1,hint:"ひし形の面積＝対角線×対角線÷2 だよ。"},
+        {id:"5-12",emoji:"🪤",q:"台形の面積の公式はどれですか？",choices:["（上底×下底）÷2×高さ","（上底＋下底）×高さ÷2","上底×下底×高さ","（上底＋下底＋高さ）÷2"],answer:1,hint:"台形の面積＝（上底＋下底）×高さ÷2 だよ。"},
+        {id:"5-13",emoji:"💎",q:"対角線が6cmと8cmのひし形の面積は？",choices:["48cm²","24cm²","14cm²","28cm²"],answer:1,hint:"6×8÷2＝24 cm² だよ。"},
+        {id:"5-14",emoji:"🪤",q:"上底3cm、下底7cm、高さ4cmの台形の面積は？",choices:["20cm²","40cm²","84cm²","10cm²"],answer:0,hint:"（3＋7）×4÷2＝10×4÷2＝20 cm² だよ。"},
+        {id:"5-15",emoji:"💎",q:"対角線が10cmと10cmのひし形の面積は？",choices:["100cm²","50cm²","25cm²","200cm²"],answer:1,hint:"10×10÷2＝50 cm² だよ。"},
+        {id:"5-16",emoji:"🪤",q:"上底5cm、下底9cm、高さ6cmの台形の面積は？",choices:["84cm²","42cm²","270cm²","27cm²"],answer:1,hint:"（5＋9）×6÷2＝14×6÷2＝42 cm² だよ。"},
+        {id:"5-17",emoji:"💎",q:"面積が36cm²のひし形で、一方の対角線が9cmの場合、もう一方の対角線は何cmですか？",choices:["4cm","8cm","12cm","6cm"],answer:1,hint:"もう一方の対角線＝36×2÷9＝72÷9＝8 cm だよ。"},
+        {id:"5-18",emoji:"🪤",q:"上底と下底が等しい（上底＝下底）の台形は何ですか？",choices:["ひし形","長方形（平行四辺形）","正方形","梯形"],answer:1,hint:"上底＝下底なら（上底＋下底）×高さ÷2＝2×底辺×高さ÷2＝底辺×高さ。これは長方形（平行四辺形）と同じだよ！"},
+        {id:"5-19",emoji:"💎",q:"正方形の面積を「ひし形の公式」で求めるとき、対角線の長さが6cmなら？",choices:["36cm²","18cm²","24cm²","12cm²"],answer:1,hint:"正方形はひし形の特別な形。対角線6cmで 6×6÷2＝18 cm² だよ。でも辺×辺＝約4.24×4.24≒18も近くなるね。"},
+        {id:"5-20",emoji:"🪤",q:"上底2cm、下底8cm、高さ5cmの台形の面積は？",choices:["25cm²","80cm²","50cm²","40cm²"],answer:0,hint:"（2＋8）×5÷2＝10×5÷2＝25 cm² だよ。"},
+      ]},
+      {setLabel:"第3セット：面積の応用", quizzes:[
+        {id:"5-21",emoji:"📐",q:"1辺が10cmの正方形の中に、底辺10cm・高さ6cmの三角形を書いた。三角形の面積は？",choices:["60cm²","30cm²","100cm²","50cm²"],answer:1,hint:"10×6÷2＝30 cm² だよ。"},
+        {id:"5-22",emoji:"📐",q:"複合図形（L字型）の面積を求めるとき、どうすればよいですか？",choices:["目分量で計算","いくつかの図形に分けてそれぞれ計算し合計","外側の長方形の面積だけ計算","内側の図形の面積だけ計算"],answer:1,hint:"複合図形は「分割してそれぞれ計算→合計」か「大きい図形から小さい図形を引く」で解けるよ！"},
+        {id:"5-23",emoji:"📐",q:"底辺8cm・高さ6cmの平行四辺形の面積は？",choices:["28cm²","48cm²","14cm²","96cm²"],answer:1,hint:"8×6＝48 cm² だよ。"},
+        {id:"5-24",emoji:"📐",q:"たて10cm・よこ8cmの長方形の中に、底辺10cm・高さ4cmの三角形を引いた残りの面積は？",choices:["40cm²","60cm²","80cm²","20cm²"],answer:1,hint:"長方形：10×8＝80、三角形：10×4÷2＝20  80−20＝60 cm² だよ。"},
+        {id:"5-25",emoji:"📐",q:"対角線が8cmと6cmのひし形の面積は？",choices:["24cm²","48cm²","14cm²","28cm²"],answer:0,hint:"8×6÷2＝24 cm² だよ。"},
+        {id:"5-26",emoji:"📐",q:"1ha（ヘクタール）は何m²ですか？",choices:["100m²","1000m²","10000m²","100000m²"],answer:2,hint:"1ha＝100m×100m＝10000m²（1万m²）だよ。農地や公園の広さに使うよ。"},
+        {id:"5-27",emoji:"📐",q:"1km²は何m²ですか？",choices:["1000m²","100万m²","1000万m²","10億m²"],answer:1,hint:"1km＝1000mなので、1km²＝1000×1000＝1,000,000m²（100万m²）だよ。"},
+        {id:"5-28",emoji:"📐",q:"面積が48cm²の三角形の底辺が12cmとき、高さは何cmですか？",choices:["4cm","6cm","8cm","12cm"],answer:2,hint:"高さ＝面積×2÷底辺＝48×2÷12＝8 cm だよ。"},
+        {id:"5-29",emoji:"📐",q:"図形の面積を2倍にするには、底辺か高さをどうすればよいですか？",choices:["どちらかを2倍にすればよい","両方を2倍にしなければならない","どちらかを1/2にする","変える必要はない"],answer:0,hint:"面積＝底辺×高さ÷2。底辺か高さのどちらか一方を2倍にすれば面積も2倍になるよ！"},
+        {id:"5-30",emoji:"📐",q:"底辺6cm・高さ4cmの三角形と、底辺3cm・高さ8cmの三角形。面積はどちらが大きいですか？",choices:["底辺6cm・高さ4cm","底辺3cm・高さ8cm","同じ","計算しないとわからない"],answer:2,hint:"6×4÷2＝12、3×8÷2＝12  どちらも12cm²で同じだよ！"},
+      ]},
+    ]
+  },
+  {
+    id:6, title:"割合", emoji:"📊", color:"#EAB308", bg:"#FEFCE8",
+    mascot:"🦁",
+    topics:["割合の意味と求め方","百分率・歩合","割合の活用"],
+    sets:[
+      {setLabel:"第1セット：割合の基本", quizzes:[
+        {id:"6-01",emoji:"📊",q:"割合の公式はどれですか？",choices:["比べる量÷もとにする量","もとにする量÷比べる量","比べる量×もとにする量","比べる量＋もとにする量"],answer:0,hint:"割合＝比べる量÷もとにする量 だよ。「比べる÷もと」と覚えよう！"},
+        {id:"6-02",emoji:"📊",q:"40人のクラスで24人が好きな場合、割合はいくつですか？",choices:["0.4","0.6","2.4","1.6"],answer:1,hint:"24÷40＝0.6 だよ。"},
+        {id:"6-03",emoji:"📊",q:"割合が0.3のとき、もとにする量が200なら比べる量は？",choices:["600","6","60","666"],answer:2,hint:"比べる量＝もとにする量×割合＝200×0.3＝60 だよ。"},
+        {id:"6-04",emoji:"📊",q:"比べる量が45、割合が0.9のとき、もとにする量は？",choices:["40.5","50","40","5"],answer:1,hint:"もとにする量＝比べる量÷割合＝45÷0.9＝50 だよ。"},
+        {id:"6-05",emoji:"📊",q:"割合を表す3つの式として正しいのはどれですか？",choices:["①割合＝比べる量÷もとにする量 ②比べる量＝もとにする量×割合 ③もとにする量＝比べる量÷割合","すべて同じ式","②のみ","①のみ"],answer:0,hint:"3つの式はセットで覚えよう！割合の「くもわ」（く＝くらべる、も＝もとにする、わ＝割合）が便利だよ。"},
+        {id:"6-06",emoji:"📊",q:"長さ80cmのリボンの0.25は何cmですか？",choices:["2cm","20cm","25cm","320cm"],answer:1,hint:"80×0.25＝20 cm だよ。"},
+        {id:"6-07",emoji:"📊",q:"30人が全体の0.6のとき、全体は何人ですか？",choices:["18人","50人","60人","180人"],answer:1,hint:"全体＝30÷0.6＝50人 だよ。"},
+        {id:"6-08",emoji:"📊",q:"昨日150人来て、今日180人来た。今日は昨日の何倍ですか？",choices:["0.83倍","1.2倍","1.5倍","30倍"],answer:1,hint:"180÷150＝1.2倍 だよ。"},
+        {id:"6-09",emoji:"📊",q:"割合が1より大きいとき、比べる量はもとにする量より？",choices:["小さい","等しい","大きい","関係ない"],answer:2,hint:"割合＝1のとき等しい、1より大きいとき比べる量の方が大きいよ。"},
+        {id:"6-10",emoji:"📊",q:"定員40人の教室に32人いる。定員に対する割合は？",choices:["0.9","0.8","1.2","0.75"],answer:1,hint:"32÷40＝0.8 だよ。"},
+      ]},
+      {setLabel:"第2セット：百分率・歩合", quizzes:[
+        {id:"6-11",emoji:"💯",q:"割合0.35を百分率（%）で表すと？",choices:["0.035%","3.5%","35%","350%"],answer:2,hint:"百分率＝割合×100 だよ。0.35×100＝35% だね。"},
+        {id:"6-12",emoji:"💯",q:"60%を小数の割合で表すと？",choices:["60","6","0.6","0.06"],answer:2,hint:"小数の割合＝百分率÷100 だよ。60÷100＝0.6 だね。"},
+        {id:"6-13",emoji:"💯",q:"割合0.7を歩合で表すと？",choices:["7割","7分","7厘","0.7割"],answer:0,hint:"0.7＝7割 だよ。0.1＝1割、0.01＝1分、0.001＝1厘 を覚えよう！"},
+        {id:"6-14",emoji:"💯",q:"3割5分を小数で表すと？",choices:["3.5","0.35","35","0.035"],answer:1,hint:"3割5分＝0.3＋0.05＝0.35 だよ。"},
+        {id:"6-15",emoji:"💯",q:"定価1000円の品を30%引きで売ると、売値はいくらですか？",choices:["700円","300円","1300円","970円"],answer:0,hint:"30%引き＝1000×（1−0.3）＝1000×0.7＝700円 だよ。"},
+        {id:"6-16",emoji:"💯",q:"500円の消費税10%を加えると合計いくらですか？",choices:["510円","550円","600円","505円"],answer:1,hint:"消費税＝500×0.1＝50円  合計＝500＋50＝550円 だよ。"},
+        {id:"6-17",emoji:"💯",q:"元の値段が400円で、20%増しになると？",choices:["480円","420円","320円","800円"],answer:0,hint:"400×（1＋0.2）＝400×1.2＝480円 だよ。"},
+        {id:"6-18",emoji:"💯",q:"野球チームの打率3割2分5厘を小数で表すと？",choices:["3.25","0.0325","0.325","32.5"],answer:2,hint:"3割2分5厘＝0.3＋0.02＋0.005＝0.325 だよ。"},
+        {id:"6-19",emoji:"💯",q:"200人のうち150人が合格した。合格率は何%ですか？",choices:["50%","65%","75%","80%"],answer:2,hint:"150÷200＝0.75＝75% だよ。"},
+        {id:"6-20",emoji:"💯",q:"定価2000円の品が1600円で売られている。何%引きですか？",choices:["20%","25%","40%","80%"],answer:0,hint:"引き額＝2000−1600＝400  400÷2000＝0.2＝20% だよ。"},
+      ]},
+      {setLabel:"第3セット：割合の応用", quizzes:[
+        {id:"6-21",emoji:"📊",q:"定価の70%（7割）の値段を何といいますか？",choices:["売値","原価","定価","値引き額"],answer:0,hint:"定価の70%＝0.7倍の価格が「売値」。残り30%が値引き額だよ。"},
+        {id:"6-22",emoji:"📊",q:"スーパーで40%引きセール。500円の商品は何円？",choices:["200円","300円","460円","250円"],answer:1,hint:"500×（1−0.4）＝500×0.6＝300円 だよ。"},
+        {id:"6-23",emoji:"📊",q:"クラスの女子22人は全体の55%。クラス全体は何人ですか？",choices:["38人","40人","42人","44人"],answer:1,hint:"全体＝22÷0.55＝40人 だよ。"},
+        {id:"6-24",emoji:"📊",q:"去年の入場者数10000人に対して今年は12000人。増加率は何%ですか？",choices:["20%増","200%増","2%増","120%増"],answer:0,hint:"（12000−10000）÷10000＝0.2＝20% 増加 だよ。"},
+        {id:"6-25",emoji:"📊",q:"円グラフで25%を示す角度は何度ですか？",choices:["25度","45度","90度","180度"],answer:2,hint:"360度×0.25＝90度 だよ。1/4が25%で直角（90度）だね！"},
+        {id:"6-26",emoji:"📊",q:"棒グラフや円グラフを使って割合を表す理由はどれですか？",choices:["見た目が派手だから","視覚的に比べやすいから","計算が簡単だから","法律で決まっているから"],answer:1,hint:"グラフにすることで割合（量の大きさの比）が視覚的に一目でわかるよ！"},
+        {id:"6-27",emoji:"📊",q:"食塩水200gに食塩10gが入っている。食塩の割合（濃度）は何%ですか？",choices:["2%","5%","10%","20%"],answer:1,hint:"10÷200＝0.05＝5% だよ。"},
+        {id:"6-28",emoji:"📊",q:"「割引率が大きいほどお得」は正しいですか？",choices:["正しい","正しくない","場合による","定価による"],answer:0,hint:"割引率（%引き）が大きいほど安くなるよ。ただし定価が高ければ割引額も大きいから定価も見ようね！"},
+        {id:"6-29",emoji:"📊",q:"全校生徒600人のうち、給食が好きな人は75%。人数は何人ですか？",choices:["400人","450人","480人","525人"],answer:1,hint:"600×0.75＝450人 だよ。"},
+        {id:"6-30",emoji:"📊",q:"「もとにする量」を1としたとき、割合が0.8の「比べる量」はどうなりますか？",choices:["もとにする量より大きい","もとにする量と等しい","もとにする量より小さい","関係ない"],answer:2,hint:"割合0.8＜1 だから比べる量＜もとにする量。例えばもとが100なら比べる量は80だよ。"},
+      ]},
+    ]
+  },
+];
+
+// 後方互換：各UNITにquizzesを展開
+UNITS.forEach(u => { u.quizzes = u.sets.flatMap(s => s.quizzes); });
+
+const BADGES = [
+  {id:"first_quiz",label:"はじめの一歩",emoji:"🚀",desc:"最初のクイズに挑戦した！"},
+  {id:"perfect_set",label:"セットパーフェクト",emoji:"⭐",desc:"1セット全問正解！"},
+  {id:"perfect",label:"ユニットパーフェクト",emoji:"🌟",desc:"1単元30問全問正解！"},
+  {id:"all_units",label:"算数マスター",emoji:"🏆",desc:"全6単元をクリア！"},
+  {id:"streak3",label:"3連続正解",emoji:"🔥",desc:"3問連続で正解！"},
+  {id:"fast_answer",label:"スピードスター",emoji:"⚡",desc:"5秒以内に正解！"},
+  {id:"retry_clear",label:"あきらめない心",emoji:"💪",desc:"まちがい直しで全問正解！"},
+];
+
+const LS_KEY = "sansu5_v1";
+function loadState(){try{const r=localStorage.getItem(LS_KEY);return r?JSON.parse(r):null;}catch{return null;}}
+function saveState(s){try{localStorage.setItem(LS_KEY,JSON.stringify(s));}catch{}}
+function calcUnitProgress(unit,correctIds){
+  const total=unit.quizzes.length,done=unit.quizzes.filter(q=>correctIds.has(q.id)).length;
+  return{done,total,pct:total>0?Math.round((done/total)*100):0};
+}
+function useSound(){
+  const ctx=useRef(null);
+  const gc=()=>{if(!ctx.current)ctx.current=new(window.AudioContext||window.webkitAudioContext)();return ctx.current;};
+  const play=(fn)=>{try{fn(gc());}catch(e){}};
+  return{
+    correct:()=>play(ac=>{[[523,0],[659,.12],[784,.24],[1047,.36]].forEach(([f,t])=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=f;o.type="sine";g.gain.setValueAtTime(0,ac.currentTime+t);g.gain.linearRampToValueAtTime(.18,ac.currentTime+t+.04);g.gain.linearRampToValueAtTime(0,ac.currentTime+t+.18);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.2);})}),
+    wrong:()=>play(ac=>{[[300,0],[220,.15]].forEach(([f,t])=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=f;o.type="sawtooth";g.gain.setValueAtTime(0,ac.currentTime+t);g.gain.linearRampToValueAtTime(.12,ac.currentTime+t+.03);g.gain.linearRampToValueAtTime(0,ac.currentTime+t+.2);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.25);})}),
+    clear:()=>play(ac=>{[[523,0],[659,.1],[784,.2],[1047,.32],[1319,.46]].forEach(([f,t])=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=f;o.type="triangle";g.gain.setValueAtTime(0,ac.currentTime+t);g.gain.linearRampToValueAtTime(.2,ac.currentTime+t+.05);g.gain.linearRampToValueAtTime(0,ac.currentTime+t+.35);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.4);})}),
+    badge:()=>play(ac=>{[1047,1319,1568,2093].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=f;o.type="sine";const t=i*.08;g.gain.setValueAtTime(0,ac.currentTime+t);g.gain.linearRampToValueAtTime(.15,ac.currentTime+t+.04);g.gain.linearRampToValueAtTime(0,ac.currentTime+t+.22);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.25);})}),
+    tap:()=>play(ac=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=800;o.type="sine";g.gain.setValueAtTime(.08,ac.currentTime);g.gain.linearRampToValueAtTime(0,ac.currentTime+.06);o.start(ac.currentTime);o.stop(ac.currentTime+.07);}),
+    streak:()=>play(ac=>{[880,1100,1320].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=f;o.type="sine";const t=i*.07;g.gain.setValueAtTime(0,ac.currentTime+t);g.gain.linearRampToValueAtTime(.13,ac.currentTime+t+.03);g.gain.linearRampToValueAtTime(0,ac.currentTime+t+.15);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.18);})}),
+  };
+}
+function shuffleChoices(quiz){
+  const idx=quiz.choices.map((c,i)=>({text:c,isAnswer:i===quiz.answer}));
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return{...quiz,choices:idx.map(c=>c.text),answer:idx.findIndex(c=>c.isAnswer)};
+}
+function todayStr(){return new Date().toLocaleDateString("ja-JP",{month:"2-digit",day:"2-digit"});}
+function Stars({count}){return <span>{[...Array(3)].map((_,i)=><span key={i} style={{fontSize:18,color:i<count?"#FFD700":"#ddd"}}>★</span>)}</span>;}
+function Confetti({active}){
+  const colors=["#FF6B6B","#4ECDC4","#FFE66D","#A8E6CF","#FF8B94","#B4F8C8"];
+  if(!active)return null;
+  return(<div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:9999}}>
+    {[...Array(40)].map((_,i)=>(<div key={i} style={{position:"absolute",left:`${Math.random()*100}%`,top:"-20px",width:`${Math.random()*10+6}px`,height:`${Math.random()*10+6}px`,background:colors[i%colors.length],borderRadius:Math.random()>.5?"50%":"0",animation:`confettiFall ${Math.random()*2+1.5}s ease-in ${Math.random()*.5}s forwards`}}/>))}
+  </div>);
+}
+
+function HomeScreen({correctIdsMap,wrongQuizIds,onStart,onStartRetry}){
+  const totalQ=UNITS.reduce((a,u)=>a+u.quizzes.length,0);
+  const allCorrect=UNITS.reduce((cnt,u)=>{const cids=correctIdsMap[u.id]||new Set();return cnt+u.quizzes.filter(q=>cids.has(q.id)).length;},0);
+  const pct=Math.round((allCorrect/totalQ)*100);
+  return(
+    <div style={{padding:"0 0 80px"}}>
+      <div style={{background:"linear-gradient(135deg,#E65100,#F57C00 60%,#FB8C00)",borderRadius:"0 0 28px 28px",padding:"18px 20px 16px",color:"#fff"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div>
+            <div style={{fontSize:11,opacity:.8,letterSpacing:1}}>小学5年生</div>
+            <div style={{fontSize:20,fontWeight:900,letterSpacing:"-.5px",marginTop:1}}>📖 算数5年生</div>
+            <div style={{fontSize:10,opacity:.7,marginTop:1}}>東京書籍 準拠 ・ 全{totalQ}問</div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:26,fontWeight:900,lineHeight:1}}>{pct}<span style={{fontSize:13}}>%</span></div>
+            <div style={{fontSize:9,opacity:.8,marginBottom:5}}>クリア率</div>
+            <div style={{height:6,background:"rgba(255,255,255,.25)",borderRadius:9,width:80}}>
+              <div style={{height:6,background:"#FFD700",borderRadius:9,width:`${pct}%`,transition:"width .8s",boxShadow:pct>0?"0 0 6px rgba(255,215,0,.7)":"none"}}/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{padding:"0 16px"}}>
+        {wrongQuizIds.length>0&&(
+          <div onClick={onStartRetry} style={{marginTop:14,background:"#FFF3E0",border:"2px solid #FF9800",borderRadius:20,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}
+            onTouchStart={e=>e.currentTarget.style.transform="scale(.97)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}
+            onMouseDown={e=>e.currentTarget.style.transform="scale(.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}>
+            <div style={{fontSize:28}}>📝</div>
+            <div><div style={{fontWeight:800,fontSize:14,color:"#E65100"}}>まちがい直し</div><div style={{fontSize:11,color:"#BF360C",marginTop:1}}>{wrongQuizIds.length}問のまちがいをまとめて解こう！</div></div>
+            <div style={{marginLeft:"auto",fontSize:20}}>→</div>
+          </div>
+        )}
+        <div style={{marginTop:16}}>
+          <div style={{fontWeight:700,fontSize:12,color:"#888",marginBottom:8}}>📚 単元を選んで！</div>
+          <div style={{display:"flex",flexDirection:"column",gap:9}}>
+            {UNITS.map(unit=>{
+              const correctIds=correctIdsMap[unit.id]||new Set();
+              const{done,total}=calcUnitProgress(unit,correctIds);
+              const completed=done===total;
+              return(
+                <div key={unit.id} onClick={()=>onStart(unit)}
+                  style={{background:"#fff",borderRadius:18,padding:"13px 14px",boxShadow:"0 3px 16px rgba(0,0,0,.07)",cursor:"pointer",border:`2px solid ${completed?unit.color:"transparent"}`,display:"flex",alignItems:"center",gap:12}}
+                  onTouchStart={e=>e.currentTarget.style.transform="scale(.97)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}
+                  onMouseDown={e=>e.currentTarget.style.transform="scale(.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}>
+                  <div style={{width:48,height:48,background:unit.bg,borderRadius:13,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{unit.emoji}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:800,fontSize:14,color:"#333"}}>{unit.title}</div>
+                    <div style={{fontSize:10,color:"#aaa",marginTop:1}}>10問×3セット</div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginTop:5}}>
+                      <div style={{height:5,background:"#f0f0f0",borderRadius:9,flex:1}}>
+                        <div style={{height:5,background:unit.color,borderRadius:9,width:`${(done/total)*100}%`,transition:"width .6s"}}/>
+                      </div>
+                      <span style={{fontSize:10,color:"#bbb",whiteSpace:"nowrap"}}>{done}/{total}問</span>
+                    </div>
+                  </div>
+                  {completed&&<div style={{fontSize:20,flexShrink:0}}>✅</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HistoryScreen({history,badges}){
+  const CHART_DAYS=7,BAR_WIDTH=28;
+  const days=useMemo(()=>{
+    const map={};
+    history.forEach(h=>{if(!map[h.date])map[h.date]={date:h.date,total:0,correct:0};map[h.date].total++;if(h.correct)map[h.date].correct++;});
+    const result=[];
+    for(let i=CHART_DAYS-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=d.toLocaleDateString("ja-JP",{month:"2-digit",day:"2-digit"});result.push(map[key]||{date:key,total:0,correct:0});}
+    return result;
+  },[history]);
+  const maxTotal=Math.max(...days.map(d=>d.total),1);
+  const CHART_H=110,chartWidth=CHART_DAYS*(BAR_WIDTH+8);
+  const getX=i=>i*(BAR_WIDTH+8)+(BAR_WIDTH/2);
+  const getY=d=>d.total===0?CHART_H:CHART_H-Math.max((d.correct/d.total)*CHART_H,4);
+  const linePoints=days.map((d,i)=>({x:getX(i),y:getY(d),rate:d.total===0?null:Math.round((d.correct/d.total)*100)}));
+  const validPoints=linePoints.filter(p=>p.rate!==null);
+  const polyline=validPoints.map(p=>`${p.x},${p.y}`).join(" ");
+  const totalAnswered=history.length,totalCorrect=history.filter(h=>h.correct).length,rate=totalAnswered>0?Math.round((totalCorrect/totalAnswered)*100):0;
+  return(
+    <div style={{padding:"20px 16px 90px"}}>
+      <div style={{fontWeight:900,fontSize:18,color:"#333",marginBottom:16}}>📊 学習記録</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
+        {[{label:"解いた問題",value:totalAnswered,unit:"問",color:"#1565C0"},{label:"正解数",value:totalCorrect,unit:"問",color:"#66BB6A"},{label:"正解率",value:rate,unit:"%",color:"#E53935"}].map(s=>(
+          <div key={s.label} style={{background:"#fff",borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:"0 2px 10px rgba(0,0,0,.06)"}}>
+            <div style={{fontSize:22,fontWeight:900,color:s.color}}>{s.value}<span style={{fontSize:12}}>{s.unit}</span></div>
+            <div style={{fontSize:10,color:"#aaa",marginTop:2}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:"#fff",borderRadius:20,padding:"16px",boxShadow:"0 3px 16px rgba(0,0,0,.07)",marginBottom:16}}>
+        <div style={{fontWeight:700,fontSize:13,color:"#555",marginBottom:10}}>🏅 ゲットしたバッジ</div>
+        {badges.length===0?(<div style={{fontSize:12,color:"#ccc",textAlign:"center",padding:"10px 0"}}>クイズを解いてバッジをゲットしよう！</div>):(
+          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+            {badges.map(b=>(<div key={b.id} style={{background:"#FFF9C4",border:"2px solid #FFD700",borderRadius:12,padding:"6px 10px",fontSize:11,display:"flex",alignItems:"center",gap:4,fontWeight:700}}>
+              <span>{b.emoji}</span><div><div>{b.label}</div><div style={{fontSize:9,color:"#999",fontWeight:500}}>{b.desc}</div></div>
+            </div>))}
+          </div>
+        )}
+      </div>
+      <div style={{background:"#fff",borderRadius:20,padding:"18px 14px",boxShadow:"0 3px 16px rgba(0,0,0,.07)",marginBottom:16}}>
+        <div style={{fontWeight:700,fontSize:13,color:"#555",marginBottom:2}}>日ごとの学習の様子（直近7日）</div>
+        <div style={{fontSize:10,color:"#aaa",marginBottom:10}}>棒グラフ：解いた問題数　折れ線：正解率</div>
+        {days.every(d=>d.total===0)?(<div style={{textAlign:"center",padding:"20px 0",color:"#ccc",fontSize:13}}>まだ記録がないよ。問題を解くと記録されるよ！</div>):(
+          <div style={{display:"flex"}}>
+            <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",height:CHART_H+20,paddingBottom:20,width:26,flexShrink:0}}>
+              {[maxTotal,Math.round(maxTotal/2),0].map((v,i)=><div key={i} style={{fontSize:9,color:"#bbb",textAlign:"right"}}>{v}</div>)}
+            </div>
+            <div style={{flex:1,overflowX:"auto"}}>
+              <div style={{position:"relative",width:chartWidth,height:CHART_H+20}}>
+                <svg style={{position:"absolute",top:0,left:0}} width={chartWidth} height={CHART_H}>
+                  {[0,.5,1].map((r,i)=><line key={i} x1={0} y1={CHART_H*r} x2={chartWidth} y2={CHART_H*r} stroke="#f0f0f0" strokeWidth={1}/>)}
+                </svg>
+                <div style={{display:"flex",gap:8,alignItems:"flex-end",height:CHART_H,position:"relative",zIndex:1}}>
+                  {days.map((d,i)=>{const barH=d.total===0?2:Math.max((d.total/maxTotal)*CHART_H,4);return(
+                    <div key={d.date} style={{width:BAR_WIDTH,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",height:CHART_H}}>
+                      {d.total>0&&<div style={{fontSize:9,fontWeight:700,color:"#1565C0",marginBottom:2}}>{d.total}</div>}
+                      <div style={{width:BAR_WIDTH,height:barH,background:d.total>0?"#BBDEFB":"#f5f5f5",borderRadius:"5px 5px 0 0"}}/>
+                    </div>
+                  );})}
+                </div>
+                {validPoints.length>=1&&(<svg style={{position:"absolute",top:0,left:0,zIndex:2,pointerEvents:"none"}} width={chartWidth} height={CHART_H}>
+                  {validPoints.length>=2&&<polyline points={polyline} fill="none" stroke="#E53935" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
+                  {linePoints.map((p,i)=>p.rate!==null?(<g key={i}><circle cx={p.x} cy={p.y} r={4} fill="#fff" stroke="#E53935" strokeWidth={2}/><text x={p.x} y={p.y-7} textAnchor="middle" fontSize={9} fill="#E53935" fontWeight={700}>{p.rate}%</text></g>):null)}
+                </svg>)}
+                <div style={{display:"flex",gap:8,height:20,alignItems:"center"}}>
+                  {days.map(d=><div key={d.date} style={{width:BAR_WIDTH,flexShrink:0,textAlign:"center",fontSize:9,color:"#aaa"}}>{d.date}</div>)}
+                </div>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",height:CHART_H+20,paddingBottom:20,width:26,flexShrink:0}}>
+              {["100%","50%","0%"].map((v,i)=><div key={i} style={{fontSize:9,color:"#E53935"}}>{v}</div>)}
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{background:"#fff",borderRadius:20,padding:"18px 16px",boxShadow:"0 3px 16px rgba(0,0,0,.07)"}}>
+        <div style={{fontWeight:700,fontSize:13,color:"#555",marginBottom:14}}>単元別 正解率</div>
+        {UNITS.map(unit=>{
+          const uH=history.filter(h=>h.unitId===unit.id);
+          if(uH.length===0)return(<div key={unit.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}><span style={{fontSize:18,width:24}}>{unit.emoji}</span><span style={{fontSize:12,color:"#aaa",flex:1}}>{unit.title}</span><span style={{fontSize:11,color:"#ccc"}}>未挑戦</span></div>);
+          const r=Math.round((uH.filter(h=>h.correct).length/uH.length)*100);
+          return(<div key={unit.id} style={{marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><span style={{fontSize:16}}>{unit.emoji}</span><span style={{fontSize:12,fontWeight:700,color:"#444",flex:1}}>{unit.title}</span><span style={{fontSize:12,fontWeight:900,color:unit.color}}>{r}%</span></div>
+            <div style={{height:6,background:"#f0f0f0",borderRadius:9}}><div style={{height:6,background:unit.color,borderRadius:9,width:`${r}%`,transition:"width .6s"}}/></div>
+          </div>);
+        })}
+      </div>
+    </div>
+  );
+}
+
+function UnitScreen({unit,correctIds,resumeInfo,onStartSet,onBack}){
+  const snd=useSound();
+  const containerRef=useRef(null);
+  useEffect(()=>{
+    if(containerRef.current)containerRef.current.scrollTop=0;
+    window.scrollTo(0,0);
+  },[unit]);
+  const{done,total}=calcUnitProgress(unit,correctIds);
+  const prevStars=done===total?3:done>=Math.ceil(total/2)?2:done>0?1:0;
+  return(
+    <div ref={containerRef} style={{paddingBottom:80}}>
+      <div style={{background:`linear-gradient(135deg,${unit.color}dd,${unit.color}88)`,borderRadius:"0 0 28px 28px",padding:"18px 20px 16px",color:"#fff"}}>
+        <button onClick={()=>{snd.tap();onBack();}} style={{background:"rgba(255,255,255,.25)",border:"none",color:"#fff",borderRadius:10,padding:"5px 12px",fontWeight:700,cursor:"pointer",marginBottom:14}}>← もどる</button>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div>
+            <div style={{fontSize:11,opacity:.8,letterSpacing:1}}>{unit.topics[0]}</div>
+            <div style={{fontSize:20,fontWeight:900,letterSpacing:"-.5px",marginTop:1}}>{unit.emoji} {unit.title}</div>
+            <div style={{fontSize:10,opacity:.7,marginTop:1}}>10問×3セット・全{unit.quizzes.length}問</div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:26,fontWeight:900,lineHeight:1}}>{Math.round((done/total)*100)}<span style={{fontSize:13}}>%</span></div>
+            <div style={{fontSize:9,opacity:.8,marginBottom:5}}>クリア率</div>
+            <div style={{height:6,background:"rgba(255,255,255,.25)",borderRadius:9,width:80}}>
+              <div style={{height:6,background:"#FFD700",borderRadius:9,width:`${Math.round((done/total)*100)}%`,transition:"width .8s"}}/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{padding:"18px 16px"}}>
+        {prevStars>0&&(<div style={{background:"#FFF9C4",border:"2px solid #FFD700",borderRadius:14,padding:"10px 14px",marginBottom:14,textAlign:"center"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#B8860B"}}>これまでの記録</div>
+          <Stars count={prevStars}/>
+          <div style={{fontSize:11,color:"#aaa",marginTop:4}}>{done}/{total}問 正解済み</div>
+        </div>)}
+        <div style={{fontWeight:700,fontSize:13,color:"#555",marginBottom:10}}>📖 セットを選んで挑戦しよう！</div>
+        {unit.sets.map((set,si)=>{
+          const setCorrect=set.quizzes.filter(q=>correctIds.has(q.id)).length;
+          const setTotal=set.quizzes.length,setDone=setCorrect===setTotal;
+          const ri=resumeInfo[`${unit.id}-${si}`]||0,hasResume=ri>0&&ri<setTotal;
+          return(
+            <div key={si} style={{background:"#fff",borderRadius:16,padding:"14px",marginBottom:10,boxShadow:"0 2px 10px rgba(0,0,0,.06)",border:`2px solid ${setDone?unit.color:"#eee"}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                <div style={{width:28,height:28,background:unit.bg,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,color:unit.color,flexShrink:0}}>{si+1}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#333"}}>{set.setLabel}</div>
+                  <div style={{fontSize:11,color:"#aaa"}}>{setCorrect}/{setTotal}問正解</div>
+                </div>
+                {setDone&&<span style={{fontSize:18}}>✅</span>}
+              </div>
+              <div style={{height:4,background:"#f0f0f0",borderRadius:9,marginBottom:10}}>
+                <div style={{height:4,background:unit.color,borderRadius:9,width:`${(setCorrect/setTotal)*100}%`,transition:"width .5s"}}/>
+              </div>
+              <button onClick={()=>{snd.tap();onStartSet(si,false);}} style={{width:"100%",background:`linear-gradient(135deg,${unit.color},${unit.color}bb)`,color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+                {hasResume?"⏭ 続きから":"🎮 このセットに挑戦！"} ({setTotal}問)
+              </button>
+              {hasResume&&(<button onClick={()=>{snd.tap();onStartSet(si,true);}} style={{width:"100%",background:"#fff",color:"#888",border:"1px solid #eee",borderRadius:12,padding:"8px",fontSize:12,fontWeight:600,cursor:"pointer",marginTop:6}}>最初からやり直す</button>)}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function QuizScreen({quizzes,unitColor,unitEmoji,unitTitle,isRetry,startIndex=0,onComplete,onAbort}){
+  const snd=useSound();
+  const[shuffledQuizzes]=useState(()=>quizzes.map(q=>shuffleChoices(q)));
+  const[current,setCurrent]=useState(startIndex);
+  const[selected,setSelected]=useState(null);
+  const[results,setResults]=useState([]);
+  const[showHint,setShowHint]=useState(false);
+  const[streak,setStreak]=useState(0);
+  const[startTime,setStartTime]=useState(Date.now());
+  const[fastAnswer,setFastAnswer]=useState(false);
+  const[confetti,setConfetti]=useState(false);
+  const[finished,setFinished]=useState(false);
+  const[newBadges,setNewBadges]=useState([]);
+  const quiz=shuffledQuizzes[current];
+  const isLast=current===shuffledQuizzes.length-1;
+  const color=unitColor||"#1565C0";
+  useEffect(()=>{setStartTime(Date.now());setShowHint(false);setSelected(null);setFastAnswer(false);},[current]);
+  const handleSelect=(idx)=>{
+    if(selected!==null)return;
+    const elapsed=(Date.now()-startTime)/1000;
+    const correct=idx===quiz.answer;
+    setSelected(idx);
+    const newResults=[...results,{quizId:quiz.id,correct}];
+    setResults(newResults);
+    const newStreak=correct?streak+1:0;setStreak(newStreak);
+    const fast=elapsed<=5&&correct;setFastAnswer(fast);
+    if(correct){if(newStreak>=3)snd.streak();else snd.correct();setConfetti(true);setTimeout(()=>setConfetti(false),2000);}
+    else snd.wrong();
+    if(isLast){
+      setTimeout(()=>{
+        const cc=newResults.filter(r=>r.correct).length;
+        const stars=cc===shuffledQuizzes.length?3:cc>=Math.ceil(shuffledQuizzes.length/2)?2:1;
+        const earned=[];
+        if(!isRetry&&newResults.length<=1)earned.push("first_quiz");
+        if(newStreak>=3)earned.push("streak3");
+        if(fast)earned.push("fast_answer");
+        if(cc===shuffledQuizzes.length){earned.push("perfect_set");if(shuffledQuizzes.length>=30)earned.push("perfect");if(isRetry)earned.push("retry_clear");}
+        if(earned.length>0)snd.badge();else snd.clear();
+        setNewBadges(earned);setFinished(true);onComplete(newResults,stars,earned);
+      },1200);
+    }
+  };
+  if(finished){
+    const cc=results.filter(r=>r.correct).length;
+    const stars=cc===shuffledQuizzes.length?3:cc>=Math.ceil(shuffledQuizzes.length/2)?2:1;
+    return(
+      <div style={{padding:"32px 20px",textAlign:"center",paddingBottom:90}}>
+        <Confetti active={stars===3}/>
+        <div style={{fontSize:64}}>{stars===3?"🏆":stars===2?"🥈":"🥉"}</div>
+        <div style={{fontSize:24,fontWeight:900,color:"#333",marginTop:10}}>{stars===3?"かんぺき！！":stars===2?"よくできました！":"がんばったね！"}</div>
+        <div style={{fontSize:15,color:"#666",marginTop:8}}>{shuffledQuizzes.length}問中 <span style={{fontWeight:900,fontSize:20,color}}>{cc}</span>問 正解！</div>
+        <div style={{marginTop:12}}><Stars count={stars}/></div>
+        {newBadges.length>0&&(<div style={{margin:"18px 0",background:"#FFF9C4",borderRadius:16,padding:14,border:"2px solid #FFD700"}}>
+          <div style={{fontWeight:700,fontSize:13,color:"#B8860B",marginBottom:6}}>🎉 バッジをゲット！</div>
+          {newBadges.map(id=>{const b=BADGES.find(x=>x.id===id);return b?<div key={id} style={{fontSize:13,marginBottom:3}}>{b.emoji} <strong>{b.label}</strong> — {b.desc}</div>:null;})}
+        </div>)}
+        <button onClick={()=>onAbort([])} style={{marginTop:16,background:`linear-gradient(135deg,${color},${color}99)`,color:"#fff",border:"none",borderRadius:20,padding:"14px 40px",fontSize:16,fontWeight:900,cursor:"pointer"}}>ホームにもどる 🏠</button>
+      </div>
+    );
+  }
+  return(
+    <div style={{paddingBottom:80}}>
+      <Confetti active={confetti&&selected===quiz.answer}/>
+      <div style={{background:`linear-gradient(135deg,${color}cc,${color}88)`,padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <button onClick={()=>onAbort(results)} style={{background:"rgba(255,255,255,.3)",border:"none",color:"#fff",borderRadius:10,padding:"4px 12px",fontWeight:700,cursor:"pointer",fontSize:12}}>✕</button>
+        <div style={{color:"#fff",fontWeight:800,fontSize:13}}>{unitEmoji} {unitTitle}</div>
+        <div style={{background:"rgba(255,255,255,.25)",borderRadius:10,padding:"3px 10px",color:"#fff",fontWeight:900,fontSize:13}}>{current+1}/{shuffledQuizzes.length}</div>
+      </div>
+      <div style={{height:6,background:"#f0f0f0"}}><div style={{height:6,background:color,width:`${((current+(selected!==null?1:0))/shuffledQuizzes.length)*100}%`,transition:"width .4s"}}/></div>
+      {streak>=2&&<div style={{background:"#FFF3E0",padding:"5px 16px",textAlign:"center",fontSize:12,fontWeight:700,color:"#E65100"}}>🔥 {streak}連続正解中！</div>}
+      <div style={{padding:"16px"}}>
+        <div style={{background:"#fff",borderRadius:22,padding:"18px",boxShadow:"0 5px 20px rgba(0,0,0,.08)",marginBottom:16}}>
+          <div style={{fontSize:32,textAlign:"center",marginBottom:10}}>{quiz.emoji}</div>
+          <div style={{fontSize:15,fontWeight:800,color:"#333",lineHeight:1.65,textAlign:"center"}}>{quiz.q}</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:9}}>
+          {quiz.choices.map((ch,i)=>{
+            const isCorrect=i===quiz.answer,isSel=i===selected;
+            let bg="#fff",border="2px solid #eee",col="#333";
+            if(selected!==null){if(isCorrect){bg="#E8F5E9";border="2px solid #66BB6A";col="#2E7D32";}else if(isSel){bg="#FFEBEE";border="2px solid #EF5350";col="#C62828";}}
+            return(<button key={i} onClick={()=>handleSelect(i)} style={{background:bg,border,borderRadius:14,padding:"12px 14px",fontSize:13,fontWeight:700,color:col,cursor:selected!==null?"default":"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{width:28,height:28,background:selected!==null?(isCorrect?"#66BB6A":isSel?"#EF5350":"#f0f0f0"):"#EEF2FF",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:selected!==null?(isCorrect||isSel?"#fff":"#aaa"):color,flexShrink:0}}>{["A","B","C","D"][i]}</span>
+              <span style={{flex:1}}>{ch}</span>
+              {selected!==null&&isCorrect&&<span>✅</span>}
+              {selected!==null&&isSel&&!isCorrect&&<span>❌</span>}
+            </button>);
+          })}
+        </div>
+        {selected===null&&(<button onClick={()=>setShowHint(h=>!h)} style={{marginTop:12,background:"transparent",border:"2px dashed #e0e0e0",borderRadius:12,padding:"9px 16px",color:"#bbb",fontSize:12,fontWeight:700,cursor:"pointer",width:"100%"}}>💡 ヒントを見る</button>)}
+        {showHint&&selected===null&&(<div style={{marginTop:6,background:"#FFFDE7",borderRadius:12,padding:"10px 14px",fontSize:12,color:"#795548",border:"1px solid #FFD54F",fontWeight:600}}>💡 {quiz.hint}</div>)}
+        {selected!==null&&(
+          <div style={{marginTop:14}}>
+            <div style={{background:selected===quiz.answer?"#E8F5E9":"#FFEBEE",borderRadius:14,padding:"12px 14px",fontSize:13,color:selected===quiz.answer?"#2E7D32":"#C62828",fontWeight:700,marginBottom:10}}>
+              {selected===quiz.answer?`🎉 正解！${fastAnswer?" ⚡ はやい！":""}`:`😅 ざんねん！正解は「${quiz.choices[quiz.answer]}」`}
+              <div style={{fontWeight:600,marginTop:4,fontSize:12}}>💡 {quiz.hint}</div>
+            </div>
+            {!isLast&&(<button onClick={()=>{snd.tap();setCurrent(c=>c+1);}} style={{width:"100%",background:`linear-gradient(135deg,${color},${color}aa)`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer"}}>次の問題へ →</button>)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const[tab,setTab]=useState("home");
+  const[screen,setScreen]=useState("home");
+  const[activeUnit,setActiveUnit]=useState(null);
+  const[activeSetIdx,setActiveSetIdx]=useState(0);
+  const[restartFromZero,setRestartFromZero]=useState(false);
+  const[correctIdsMap,setCorrectIdsMap]=useState(()=>{
+    const saved=loadState();
+    if(saved?.correctIdsMap){const r={};for(const[k,v]of Object.entries(saved.correctIdsMap)){r[Number(k)]=new Set(v);}return r;}
+    return{};
+  });
+  const[resumeInfo,setResumeInfo]=useState(()=>{const saved=loadState();return saved?.resumeInfo||{};});
+  const[wrongQuizIds,setWrongQuizIds]=useState(()=>{const saved=loadState();return saved?.wrongQuizIds||[];});
+  const[history,setHistory]=useState(()=>{const saved=loadState();return saved?.history||[];});
+  const[earnedBadges,setEarnedBadges]=useState(()=>{const saved=loadState();return saved?BADGES.filter(b=>(saved.earnedBadgeIds||[]).includes(b.id)):[];});
+  useEffect(()=>{
+    const ser={};for(const[k,v]of Object.entries(correctIdsMap)){ser[k]=[...v];}
+    saveState({correctIdsMap:ser,resumeInfo,wrongQuizIds,history,earnedBadgeIds:earnedBadges.map(b=>b.id)});
+  },[correctIdsMap,resumeInfo,wrongQuizIds,history,earnedBadges]);
+  const addCorrectIds=useCallback((unitId,quizIds)=>{
+    if(!unitId||quizIds.length===0)return;
+    setCorrectIdsMap(prev=>{const next={...prev};const ex=new Set(next[unitId]||[]);quizIds.forEach(id=>ex.add(id));next[unitId]=ex;return next;});
+  },[]);
+  const saveResults=useCallback((results,unitId,isRetryMode)=>{
+    if(results.length===0)return;
+    const date=todayStr();
+    setHistory(h=>[...h,...results.map(r=>({date,unitId,quizId:r.quizId,correct:r.correct}))]);
+    const correctedIds=results.filter(r=>r.correct).map(r=>r.quizId);
+    if(unitId&&correctedIds.length>0)addCorrectIds(unitId,correctedIds);
+    setWrongQuizIds(prev=>{const s=new Set(prev);results.forEach(r=>{if(r.correct)s.delete(r.quizId);else if(!isRetryMode)s.add(r.quizId);});return[...s];});
+  },[addCorrectIds]);
+  const handleComplete=useCallback((results,stars,newBadgeIds)=>{
+    const unitId=activeUnit?.id,riKey=`${unitId}-${activeSetIdx}`;
+    saveResults(results,unitId,screen==="retry");
+    setResumeInfo(prev=>({...prev,[riKey]:0}));
+    if(newBadgeIds?.length>0){setEarnedBadges(prev=>{const exist=new Set(prev.map(b=>b.id));const toAdd=BADGES.filter(b=>newBadgeIds.includes(b.id)&&!exist.has(b.id));return toAdd.length>0?[...prev,...toAdd]:prev;});}
+    setTimeout(()=>{setCorrectIdsMap(cm=>{const allDone=UNITS.every(u=>u.quizzes.every(q=>(cm[u.id]||new Set()).has(q.id)));if(allDone)setEarnedBadges(prev=>{if(prev.find(b=>b.id==="all_units"))return prev;const b=BADGES.find(b=>b.id==="all_units");return b?[...prev,b]:prev;});return cm;});},100);
+  },[activeUnit,activeSetIdx,screen,saveResults]);
+  const handleAbort=useCallback((results)=>{
+    const unitId=activeUnit?.id,riKey=`${unitId}-${activeSetIdx}`;
+    saveResults(results,unitId,screen==="retry");
+    if(unitId&&results.length>0&&screen!=="retry")setResumeInfo(prev=>({...prev,[riKey]:results.length}));
+    setScreen("home");
+  },[activeUnit,activeSetIdx,screen,saveResults]);
+  const retryQuizzes=useMemo(()=>{const all=UNITS.flatMap(u=>u.quizzes);return wrongQuizIds.map(id=>all.find(q=>q.id===id)).filter(Boolean);},[wrongQuizIds]);
+  const color=activeUnit?.color||"#1565C0";
+  const activeQuizzes=activeUnit?activeUnit.sets[activeSetIdx]?.quizzes||[]:[];
+  const riKey=activeUnit?`${activeUnit.id}-${activeSetIdx}`:"";
+  const activeStartIdx=restartFromZero?0:(resumeInfo[riKey]||0);
+  const activeCorrectIds=activeUnit?(correctIdsMap[activeUnit.id]||new Set()):new Set();
+  return(
+    <div style={{maxWidth:420,margin:"0 auto",minHeight:"100vh",background:"#FFF8E8",fontFamily:"'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif",position:"relative"}}>
+      <style>{`@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}button{-webkit-tap-highlight-color:transparent}`}</style>
+      {tab==="home"&&screen==="home"&&<HomeScreen correctIdsMap={correctIdsMap} wrongQuizIds={wrongQuizIds} onStart={unit=>{setActiveUnit(unit);setActiveSetIdx(0);setRestartFromZero(false);setScreen("unit");window.scrollTo(0,0);}} onStartRetry={()=>setScreen("retry")}/>}
+      {tab==="home"&&screen==="unit"&&activeUnit&&<UnitScreen unit={activeUnit} correctIds={activeCorrectIds} resumeInfo={resumeInfo} onStartSet={(si,fromZero)=>{setActiveSetIdx(si);setRestartFromZero(!!fromZero);setScreen("quiz");}} onBack={()=>{setScreen("home");window.scrollTo(0,0);}}/>}
+      {tab==="home"&&screen==="quiz"&&activeUnit&&<QuizScreen quizzes={activeQuizzes} unitColor={color} unitEmoji={activeUnit.emoji} unitTitle={`${activeUnit.title} S${activeSetIdx+1}`} isRetry={false} startIndex={activeStartIdx} onComplete={handleComplete} onAbort={handleAbort}/>}
+      {tab==="home"&&screen==="retry"&&<QuizScreen quizzes={retryQuizzes} unitColor="#FF9800" unitEmoji="📝" unitTitle="まちがい直し" isRetry={true} startIndex={0} onComplete={handleComplete} onAbort={handleAbort}/>}
+      {tab==="history"&&<HistoryScreen history={history} badges={earnedBadges}/>}
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:420,background:"#fff",borderTop:"1px solid #e8eaf6",display:"flex",padding:"8px 0 12px",boxShadow:"0 -4px 20px rgba(0,0,0,.06)"}}>
+        {[{id:"home",emoji:"🏠",label:"ホーム"},{id:"history",emoji:"📊",label:"学習記録"}].map(t=>(
+          <button key={t.id} onClick={()=>{setTab(t.id);if(t.id==="home")setScreen("home");}} style={{flex:1,background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,opacity:tab===t.id?1:.4,transition:"opacity .2s"}}>
+            <span style={{fontSize:22}}>{t.emoji}</span>
+            <span style={{fontSize:10,fontWeight:700,color:tab===t.id?"#E65100":"#888"}}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
